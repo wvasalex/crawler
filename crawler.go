@@ -29,6 +29,14 @@ func isXML(path string) bool {
 	return strings.HasSuffix(path, ".xml")
 }
 
+func getDOM(link string, local bool) (doc *goquery.Document, err error) {
+	if local {
+		return localDOM(link)
+	} else {
+		return goquery.NewDocument(link)
+	}
+}
+
 func localDOM(path string) (doc *goquery.Document, err error) {
 	var f *os.File
 	f, err = os.Open(path)
@@ -37,14 +45,7 @@ func localDOM(path string) (doc *goquery.Document, err error) {
 }
 
 func parseSitemap(link string, local bool, accumulator []string) []string {
-	var doc *goquery.Document
-	var err error
-
-	if local {
-		doc, err = localDOM(link)
-	} else {
-		doc, err = goquery.NewDocument(link)
-	}
+	doc, err := getDOM(link, local)
 	_check(err)
 
 	doc.Find("loc").Each(func(i int, node *goquery.Selection) {
@@ -62,11 +63,15 @@ func parseSitemap(link string, local bool, accumulator []string) []string {
 
 var i bool = false
 
-func parseHTML(href string) {
+func parseHTML(link string) {
 	if i {
 		return
 	}
+	i = true
 
+	doc, err := getDOM(link, false)
+	_check(err)
+	fmt.Printf("Title = %s, src = %s", doc.Find("h1").Text(), link)
 }
 
 func main() {
