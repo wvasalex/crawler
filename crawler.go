@@ -2,11 +2,13 @@ package main
 
 import (
 	"bufio"
+	"encoding/csv"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 type LineReaderHandler func(string)
@@ -98,7 +100,7 @@ func parseSitemap(link string, local bool) []string {
 type PropReader map[string]string
 type PropCollection map[string]string
 
-func parseHTML(link string) {
+func parseHTML(link string) PropCollection {
 	doc, err := getDOM(link, false)
 	_check(err)
 
@@ -115,7 +117,7 @@ func parseHTML(link string) {
 		result[name] = readProp(doc, prop, result)
 	}
 
-	fmt.Println(result["code"])
+	return result
 }
 
 func getNode(doc *goquery.Document, desc PropReader) *goquery.Selection {
@@ -150,13 +152,27 @@ func readProp(doc *goquery.Document, desc PropReader, result PropCollection) str
 
 	case "Re":
 		r := regexp.MustCompile(desc["re"])
-		value = r.FindStringSubmatch(result[desc["useValue"]])[1]
+		match := r.FindStringSubmatch(result[desc["useValue"]])
+		if len(match) >= 1 {
+			value = match[1]
+		} else {
+			value = ""
+		}
 	}
 
 	r := regexp.MustCompile("\n+")
 	value = r.ReplaceAllString(strings.TrimSpace(value), "/")
 
 	return value
+}
+
+func getValues(m PropCollection) []string {
+	v := make([]string, 0, len(m))
+
+	for _, value := range m {
+		v = append(v, value)
+	}
+	return v
 }
 
 func main() {
@@ -179,11 +195,36 @@ func main() {
 
 	writeLines(products, "products.txt")*/
 
-	/*var products []string
-	readLines("products.txt", func(line string) {
-		fmt.Printf("Product = %s\n", line)
-		products = append(products, line)
-	})*/
+	//var products []PropCollection
 
-	parseHTML("https://www.auchan.ru/pokupki/cosmia-kr-lica-i-tel-uvlazh-50m.html")
+	var i int = 0
+
+	file, _ := os.Create("result.csv")
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	writer.Comma = '\t'
+	defer writer.Flush()
+
+	var wg sync.WaitGroup
+	readLines("products.txt", func(link string) {
+		if i > 10 {
+			return
+		}
+
+		i = i + 1
+		fmt.Println(link)
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			info := parseHTML(link)
+			writer.Write(getValues(info))
+		}()
+
+	})
+
+	wg.Wait()
+
+	//parseHTML("https://www.auchan.ru/pokupki/cosmia-kr-lica-i-tel-uvlazh-50m.html")
 }
