@@ -2,7 +2,7 @@ package main
 
 import (
 	"bufio"
-	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"os"
@@ -106,13 +106,14 @@ func parseHTML(link string) PropCollection {
 
 	reader := make(map[string]PropReader)
 	reader["title"] = PropReader{"selector": "h1", "prop": "Text"}
-	reader["url"] = PropReader{"selector": "meta[property='og:url']", "prop": "Attr", "Attr": "content"}
+	//reader["url"] = PropReader{"selector": "meta[property=\"og:url\"]", "prop": "Attr", "Attr": "content"}
 	reader["category"] = PropReader{"selector": "li.breadcrumbs__item", "prop": "Text"}
 	reader["price"] = PropReader{"selector": "div.current-price", "filter": "Last", "prop": "Text"}
 	reader["description"] = PropReader{"selector": "ul.prcard__feat-list", "filter": "Last", "prop": "Text"}
 	reader["code"] = PropReader{"useValue": "description", "re": "Артикул:/(?P<code>\\w+)", "prop": "Re"}
 
 	result := make(PropCollection)
+	result["url"] = link
 	for name, prop := range reader {
 		result[name] = readProp(doc, prop, result)
 	}
@@ -195,36 +196,53 @@ func main() {
 
 	writeLines(products, "products.txt")*/
 
-	//var products []PropCollection
+	var products []PropCollection
 
 	var i int = 0
 
-	file, _ := os.Create("result.csv")
+	/*file, _ := os.Create("result.csv")
 	defer file.Close()
 
 	writer := csv.NewWriter(file)
 	writer.Comma = '\t'
-	defer writer.Flush()
+	defer writer.Flush()*/
 
 	var wg sync.WaitGroup
 	readLines("products.txt", func(link string) {
-		if i > 10 {
+		if i > 50 {
 			return
 		}
 
-		i = i + 1
-		fmt.Println(link)
+		info := parseHTML(link)
+		if info["description"] == "" {
+			  fmt.Printf("No description on %s\n", link)
+		} else {
+			i = i + 1
+		  products = append(products, info)
+		}
+
+
+		/*fmt.Println(link)
 
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			info := parseHTML(link)
-			writer.Write(getValues(info))
-		}()
+			if info["description"] == "" {
+ 			  fmt.Printf("No description on %s\n", link)
+			} else {
+				i = i + 1
+			  products = append(products, info)
+			}
+		}()*/
 
 	})
 
 	wg.Wait()
 
+	data, _ := json.Marshal(products)
+	var result []string
+	result = append(result, string(data))
+	writeLines(result, "result.json")
 	//parseHTML("https://www.auchan.ru/pokupki/cosmia-kr-lica-i-tel-uvlazh-50m.html")
 }
