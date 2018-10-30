@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -190,7 +191,12 @@ func grepLinks(doc *goquery.Document, selector string) []string {
 }
 
 func normalizeLink(link, origin string) string {
-	if !strings.HasPrefix(link, origin) {
+	if strings.HasPrefix(link, "./") {
+		parts := strings.Split(origin, "/")
+		return strings.Join(parts[:len(parts)-1], "/") +
+			strings.Replace(link, "./", "/", -1)
+	}
+	if !strings.HasPrefix(link, "http") {
 		return origin + link
 	}
 	return link
@@ -198,21 +204,54 @@ func normalizeLink(link, origin string) string {
 
 func crawl(config map[string]CrawlerConfig, name string) {
 	crawlerOptions := config["crawler"]
-	var origin string = crawlerOptions["root"]["origin"]
-	doc := getDOM(origin)
-	var cat_links []string = grepLinks(doc, crawlerOptions["menu"]["selector"])
+	var (
+		origin string = crawlerOptions["root"]["origin"]
+		start  string = crawlerOptions["root"]["start"]
+	)
+	if start == "" {
+		start = origin
+	}
+
+	//doc := getDOM(start)
+	var cat_links []string
+	cat_links = append(cat_links, "https://priceguard.ru/catalog/1121159641")
+	// = grepLinks(doc, crawlerOptions["menu"]["selector"])
 	var links []string
-	for _, cat_link := range cat_links {
-		page_dom := getDOM(normalizeLink(cat_link, origin))
+	var paged map[string]bool = make(map[string]bool)
+	for i := 0; i < len(cat_links); i++ {
+		cat_link := cat_links[i]
+		link := normalizeLink(cat_link, start)
+		page_dom := getDOM(link)
 		links = append(links, grepLinks(page_dom, crawlerOptions["item"]["selector"])...)
 
-		fmt.Println("Crawled " + cat_link)
+		if paged[link] != true {
+			paged[link] = true
+			pages := page_dom.Find(crawlerOptions["pagination"]["selector"])
+			if pages.Length() > 1 {
+				r := regexp.MustCompile("\n+")
+				value := r.ReplaceAllString(strings.TrimSpace(pages.Last().Text()), "")
+				last_page, _ := strconv.Atoi(value)
+
+				if last_page > 1 {
+					var page_links []string
+					pages.Each(func(i int, node *goquery.Selection) {
+						href, _ := node.Attr("href")
+						page_links = append(page_links, href)
+					})
+					cat_links = append(cat_links, page_links[1:]...)
+					fmt.Println(page_links[1:], paged)
+				}
+			}
+
+		}
+
+		//fmt.Println("Crawled " + link)
 	}
 
 	//doc, _ := getDOM("https://www.auchan.ru/pokupki/kosmetika/uhod-za-volosami/stajling.html", false)
 	//var pages []string = grepLinks(doc, crawlerOptions["pagination"]["selector"])
 
-	var result []PropCollection
+	/*var result []PropCollection
 	var parsed PropCollection
 	var i int = 0
 	for _, link := range links {
@@ -223,7 +262,7 @@ func crawl(config map[string]CrawlerConfig, name string) {
 			continue
 		}
 
-		parsed = parseHTML(normalizeLink(link, origin), config["parser"])
+		parsed = parseHTML(normalizeLink(link, start), config["parser"])
 		if parsed["description"] == "" {
 			fmt.Printf("No description on %s\n", link)
 		} else {
@@ -237,7 +276,7 @@ func crawl(config map[string]CrawlerConfig, name string) {
 	data, _ := json.Marshal(result)
 	var result_json []string
 	result_json = append(result_json, string(data))
-	writeLines(result_json, name+"-results.json")
+	writeLines(result_json, name+"-results.json")*/
 }
 
 func main() {

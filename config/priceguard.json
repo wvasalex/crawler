@@ -1,11 +1,12 @@
-"parser option broken"
-
 {
   "crawler": {
-    "root": {"origin": "https://www.perekrestok.ru"},
-    "menu": {"selector" : ".xf-catalog-popup__link" },
-    "pagination": {"selector": ".pagination__item-link"},
-    "item": {"selector": ".xf-product-title__link"}
+    "root": {
+      "origin": "https://priceguard.ru",
+      "start": "https://priceguard.ru/catalog/1121180053"
+    },
+    "menu": {"selector" : ".a-subcat" },
+    "pagination": {"selector": ".sr-nav-num"},
+    "item": {"selector": ".or-list .or-main-block a"}
   },
   "parser": {
     "title": {"selector": "h1", "prop": "Text"},
