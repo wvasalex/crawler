@@ -3,15 +3,23 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
-	"sync"
+)
+
+var (
+	parserName = flag.String("name", "", "Parser name")
 )
 
 type LineReaderHandler func(string)
+type PropReader map[string]string
+type CrawlerConfig map[string]PropReader
+type PropCollection map[string]string
 
 func _check(err error) {
 	if err != nil {
@@ -19,27 +27,14 @@ func _check(err error) {
 	}
 }
 
-func parseUrl(url string) {
-	fmt.Println("request: " + url)
-	doc, err := goquery.NewDocument(url)
-	_check(err)
-
-	doc.Find("a").Each(func(i int, s *goquery.Selection) {
-		link, _ := s.Attr("href")
-		fmt.Println(link)
-	})
-}
-
 func isXML(path string) bool {
 	return strings.HasSuffix(path, ".xml")
 }
 
-func getDOM(link string, local bool) (doc *goquery.Document, err error) {
-	if local {
-		return localDOM(link)
-	} else {
-		return goquery.NewDocument(link)
-	}
+func getDOM(link string) *goquery.Document {
+	doc, err := goquery.NewDocument(link)
+	_check(err)
+	return doc
 }
 
 func localDOM(path string) (doc *goquery.Document, err error) {
@@ -80,38 +75,21 @@ func readLines(path string, handler LineReaderHandler) error {
 func parseSitemap(link string, local bool) []string {
 	var accumulator []string
 
-	doc, err := getDOM(link, local)
-	_check(err)
-
+	doc := getDOM(link)
 	doc.Find("loc").Each(func(i int, node *goquery.Selection) {
 		href := node.Text()
 		if isXML(href) {
 			accumulator = append(accumulator, parseSitemap(href, false)...)
 		} else {
 			accumulator = append(accumulator, href)
-			//parseHTML(href)
 		}
-
 	})
 
 	return accumulator
 }
 
-type PropReader map[string]string
-type PropCollection map[string]string
-
-func parseHTML(link string) PropCollection {
-	doc, err := getDOM(link, false)
-	_check(err)
-
-	reader := make(map[string]PropReader)
-	reader["title"] = PropReader{"selector": "h1", "prop": "Text"}
-	//reader["url"] = PropReader{"selector": "meta[property=\"og:url\"]", "prop": "Attr", "Attr": "content"}
-	reader["category"] = PropReader{"selector": "li.breadcrumbs__item", "prop": "Text"}
-	reader["price"] = PropReader{"selector": "div.current-price", "filter": "Last", "prop": "Text"}
-	reader["description"] = PropReader{"selector": "ul.prcard__feat-list", "filter": "Last", "prop": "Text"}
-	reader["code"] = PropReader{"useValue": "description", "re": "Артикул:/(?P<code>\\w+)", "prop": "Re"}
-
+func parseHTML(link string, reader CrawlerConfig) PropCollection {
+	doc := getDOM(link)
 	result := make(PropCollection)
 	result["url"] = link
 	for name, prop := range reader {
@@ -176,38 +154,106 @@ func getValues(m PropCollection) []string {
 	return v
 }
 
-func main() {
-	/*var wg sync.WaitGroup
+func getKeys(m map[string]bool) []string {
+	v := make([]string, 0, len(m))
+	for key, _ := range m {
+		v = append(v, key)
+	}
+	return v
+}
 
-	for _, url := range os.Args[1:] {
-		wg.Add(1)
+func processSitemap(source, output string) []string {
+	var products []string
+	products = parseSitemap(source, true)
+	if output != "" {
+		writeLines(products, output)
+	}
+	return products
+}
 
-		go func(url string) {
-			defer wg.Done()
-			parseUrl(url)
-		}(url)
+func readConfig(name string) map[string]CrawlerConfig {
+	b, err := ioutil.ReadFile("config/" + name + ".json")
+	_check(err)
+	var config map[string]CrawlerConfig
+	err = json.Unmarshal(b, &config)
+	_check(err)
+	return config
+}
+
+func grepLinks(doc *goquery.Document, selector string) []string {
+	var links map[string]bool = make(map[string]bool)
+	doc.Find(selector).Each(func(i int, node *goquery.Selection) {
+		link, _ := node.Attr("href")
+		links[link] = true
+	})
+	return getKeys(links)
+}
+
+func normalizeLink(link, origin string) string {
+	if !strings.HasPrefix(link, origin) {
+		return origin + link
+	}
+	return link
+}
+
+func crawl(config map[string]CrawlerConfig, name string) {
+	crawlerOptions := config["crawler"]
+	var origin string = crawlerOptions["root"]["origin"]
+	doc := getDOM(origin)
+	var cat_links []string = grepLinks(doc, crawlerOptions["menu"]["selector"])
+	var links []string
+	for _, cat_link := range cat_links {
+		page_dom := getDOM(normalizeLink(cat_link, origin))
+		links = append(links, grepLinks(page_dom, crawlerOptions["item"]["selector"])...)
+
+		fmt.Println("Crawled " + cat_link)
 	}
 
-	wg.Wait()*/
+	//doc, _ := getDOM("https://www.auchan.ru/pokupki/kosmetika/uhod-za-volosami/stajling.html", false)
+	//var pages []string = grepLinks(doc, crawlerOptions["pagination"]["selector"])
 
-	/*var products []string
-	products = parseSitemap("auchan/sitemap_index.xml", true)
-	fmt.Println(products)
-
-	writeLines(products, "products.txt")*/
-
-	var products []PropCollection
-
+	var result []PropCollection
+	var parsed PropCollection
 	var i int = 0
+	for _, link := range links {
+		if i >= 50 {
+			break
+		}
+		if strings.TrimSpace(link) == "" {
+			continue
+		}
 
-	/*file, _ := os.Create("result.csv")
-	defer file.Close()
+		parsed = parseHTML(normalizeLink(link, origin), config["parser"])
+		if parsed["description"] == "" {
+			fmt.Printf("No description on %s\n", link)
+		} else {
+			i = i + 1
+			result = append(result, parsed)
+		}
 
-	writer := csv.NewWriter(file)
-	writer.Comma = '\t'
-	defer writer.Flush()*/
+		fmt.Println("Parsed " + link)
+	}
 
-	var wg sync.WaitGroup
+	data, _ := json.Marshal(result)
+	var result_json []string
+	result_json = append(result_json, string(data))
+	writeLines(result_json, name+"-results.json")
+}
+
+func main() {
+	flag.Parse()
+
+	//processSitemap("auchan/sitemap_index.xml", "auchan/products.txt")
+
+	if *parserName == "" {
+		fmt.Println("Parser name required")
+		return
+	}
+
+	var config map[string]CrawlerConfig = readConfig(*parserName)
+	crawl(config, *parserName)
+
+	/*var wg sync.WaitGroup
 	readLines("products.txt", func(link string) {
 		if i > 50 {
 			return
@@ -215,34 +261,29 @@ func main() {
 
 		info := parseHTML(link)
 		if info["description"] == "" {
-			  fmt.Printf("No description on %s\n", link)
+			fmt.Printf("No description on %s\n", link)
 		} else {
 			i = i + 1
-		  products = append(products, info)
+			products = append(products, info)
 		}
-
-
-		/*fmt.Println(link)
-
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			info := parseHTML(link)
 			if info["description"] == "" {
- 			  fmt.Printf("No description on %s\n", link)
+				fmt.Printf("No description on %s\n", link)
 			} else {
 				i = i + 1
-			  products = append(products, info)
+				products = append(products, info)
 			}
-		}()*/
+		}()
+	})*/
 
-	})
+	//wg.Wait()
 
-	wg.Wait()
-
-	data, _ := json.Marshal(products)
+	/*data, _ := json.Marshal(products)
 	var result []string
 	result = append(result, string(data))
-	writeLines(result, "result.json")
+	writeLines(result, "result.json")*/
 	//parseHTML("https://www.auchan.ru/pokupki/cosmia-kr-lica-i-tel-uvlazh-50m.html")
 }

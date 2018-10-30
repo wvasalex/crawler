@@ -1,0 +1,15 @@
+{
+  "crawler": {
+    "root": {"origin": "https://www.perekrestok.ru"},
+    "menu": {"selector" : ".xf-catalog-popup__link" },
+    "pagination": {"selector": ".pagination__item-link"},
+    "item": {"selector": ".xf-product-title__link"}
+  },
+  "parser": {
+    "title": {"selector": "h1", "prop": "Text"},
+    "category": {"selector": "li.breadcrumbs__item", "prop": "Text"},
+    "price": {"selector": "div.current-price", "filter": "Last", "prop": "Text"},
+    "description": {"selector": "ul.prcard__feat-list", "filter": "Last", "prop": "Text"},
+    "code": {"useValue": "description", "re": "Артикул:/(?P<code>\\w+)", "prop": "Re"}
+  }
+}
