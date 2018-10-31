@@ -1,5 +1,3 @@
-"parser option broken"
-
 {
   "crawler": {
     "root": {"origin": "https://www.perekrestok.ru"},

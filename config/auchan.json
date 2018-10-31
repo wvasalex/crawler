@@ -3,7 +3,7 @@
     "root": {"origin": "https://www.auchan.ru"},
     "menu": {"selector" : ".m-menu__submenu-item .m-menu__submenu-item-link" },
     "pagination": {"selector": ".pagination__item-link"},
-    "item": {"selector":".products__item-link"}
+    "item": {"selector":".products__list .products__item-link"}
   },
   "parser": {
     "title": {"selector": "h1", "prop": "Text"},
