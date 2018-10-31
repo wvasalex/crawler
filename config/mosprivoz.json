@@ -1,0 +1,18 @@
+{
+  "crawler": {
+    "root": {
+      "origin": "https://mosprivoz.ru",
+      "start": "https://mosprivoz.ru"
+    },
+    "menu": {"selector" : "#vertical-multilevel-menu .root-item a" },
+    "pagination": {"selector": ".pagination a:not(.arrow)"},
+    "item": {"selector":".desc_name"}
+  },
+  "parser": {
+    "title": {"selector": "h1", "prop": "Text"},
+    "category": {"selector": "li.breadcrumbs__item", "prop": "Text"},
+    "price": {"selector": "div.current-price", "filter": "Last", "prop": "Text"},
+    "description": {"selector": "ul.prcard__feat-list", "filter": "Last", "prop": "Text"},
+    "code": {"useValue": "description", "re": "Артикул:/(?P<code>\\w+)", "prop": "Re"}
+  }
+}

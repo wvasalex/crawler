@@ -1,0 +1,24 @@
+{
+  "crawler": {
+    "root": {
+      "origin": "http://shop.monetka.ru",
+      "start": "http://shop.monetka.ru"
+    },
+    "menu": {
+      "selector" : ".categories-wrap a:not(.categories-overflow)" 
+    },
+    "pagination": {
+      "selector": ".pages-list a:not(.pager-next):not(.pager-previous)"
+    },
+    "item": {
+      "selector": "#product-list .product-card-description a"
+    }
+  },
+  "parser": {
+    "title": {"selector": "h1", "prop": "Text"},
+    "category": {"selector": "li.breadcrumbs__item", "prop": "Text"},
+    "price": {"selector": "div.current-price", "filter": "Last", "prop": "Text"},
+    "description": {"selector": "ul.prcard__feat-list", "filter": "Last", "prop": "Text"},
+    "code": {"useValue": "description", "re": "Артикул:/(?P<code>\\w+)", "prop": "Re"}
+  }
+}

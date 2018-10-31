@@ -1,0 +1,18 @@
+{
+  "crawler": {
+    "root": {
+      "origin": "https://www.barista-ltd.ru",
+      "start": "https://www.barista-ltd.ru"
+    },
+    "menu": {"selector" : ".menu a" },
+    "pagination": {"selector": ".pagination a:not(.hasTooltip)"},
+    "item": {"selector": ".list-product-caption h4 a"}
+  },
+  "parser": {
+    "title": {"selector": "h1", "prop": "Text"},
+    "category": {"selector": "li.breadcrumbs__item", "prop": "Text"},
+    "price": {"selector": "div.current-price", "filter": "Last", "prop": "Text"},
+    "description": {"selector": "ul.prcard__feat-list", "filter": "Last", "prop": "Text"},
+    "code": {"useValue": "description", "re": "Артикул:/(?P<code>\\w+)", "prop": "Re"}
+  }
+}
