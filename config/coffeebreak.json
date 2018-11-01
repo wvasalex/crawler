@@ -1,0 +1,18 @@
+{
+  "crawler": {
+    "root": {
+      "origin": "https://coffee-break.pro",
+      "start": "https://coffee-break.pro"
+    },
+    "menu": {"selector" : ".dropdown-menu-inner a" },
+    "pagination": {"selector": "#pagination_bottom a:not(.pagination_previous):not(.pagination_next)"},
+    "item": {"selector":".products-block .product-name"}
+  },
+  "parser": {
+    "title": {"selector": "h1", "prop": "Text"},
+    "category": {"selector": "li.breadcrumbs__item", "prop": "Text"},
+    "price": {"selector": "div.current-price", "filter": "Last", "prop": "Text"},
+    "description": {"selector": "ul.prcard__feat-list", "filter": "Last", "prop": "Text"},
+    "code": {"useValue": "description", "re": "Артикул:/(?P<code>\\w+)", "prop": "Re"}
+  }
+}

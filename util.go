@@ -103,3 +103,11 @@ func mapArray(vs []string, f func(string) string) []string {
 	}
 	return vsm
 }
+
+type workerJob func() []string
+
+func worker(id int, jobs <-chan workerJob, results chan<- []string) {
+	for job := range jobs {
+    results <- job()
+	}
+}

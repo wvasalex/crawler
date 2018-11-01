@@ -6,8 +6,9 @@ import (
 )
 
 var (
-	app    = flag.String("app", "", "Application name. Crawler on parser?")
+	app    = flag.String("app", "", "Application name. Crawler | Parser")
 	config = flag.String("config", "", "Config file name from ./config dir")
+	poolsize = flag.String("poolsize", "50", "Workers pool size")
 )
 
 type LineReaderHandler func(string)
@@ -31,8 +32,12 @@ func main() {
 		return
 	}
 
+	var bootOptions map[string]string
+	bootOptions = make(map[string]string)
+	bootOptions["poolsize"] = *poolsize
+
 	if *app == "crawler" {
-		crawl(readConfig(*config), *config)
+		crawl(readConfig(*config), *config, bootOptions)
 	}
 
 	/*var wg sync.WaitGroup

@@ -109,7 +109,8 @@ func parse(link string, reader CrawlerConfig) PropCollection {
 	return result
 }
 
-func crawl(config map[string]CrawlerConfig, name string) {
+
+func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]string) {
 	crawlerOptions := config["crawler"]
 	var (
 		origin string = crawlerOptions["root"]["origin"]
@@ -122,23 +123,30 @@ func crawl(config map[string]CrawlerConfig, name string) {
 	doc := getDOM(start)
 
 	var (
-		cat_links    []string
+		//poolsize, _ = strconv.Atoi(bootOptions["poolsize"])
+		cat_links    []string = grepLinks(doc, crawlerOptions["menu"]["selector"])
 		links        []string
 		unique_links map[string]bool = make(map[string]bool)
 	)
 
-	cat_links = grepLinks(doc, crawlerOptions["menu"]["selector"])
+	_normalizeLink := func(link string) string {
+		return normalizeLink(link, start)
+	}
+	
+	/*jobs := make(chan workerJob, channel_length)
+  results := make(chan string, channel_length)
 
+  for w := 1; w <= poolsize; w++ {
+    go worker(w, jobs, results)
+  }*/
+
+  fmt.Println(cat_links)
 	for i := 0; i < len(cat_links); i++ {
 		cat_link := cat_links[i]
-
-		link := normalizeLink(cat_link, start)
+		link := _normalizeLink(cat_link)
 		doc = getDOM(link)
 		products := grepLinks(doc, crawlerOptions["item"]["selector"])
-
-		links = append(links, mapArray(products, func(s string) string {
-			return normalizeLink(s, start)
-		})...)
+		links = append(links, mapArray(products, _normalizeLink)...)
 
 		if unique_links[link] != true {
 			unique_links[link] = true
@@ -151,20 +159,24 @@ func crawl(config map[string]CrawlerConfig, name string) {
 					pages.Each(func(i int, node *goquery.Selection) {
 						href, _ := node.Attr("href")
 						page_links = append(page_links, href)
-
-						link = normalizeLink(href, start)
+						link = _normalizeLink(href)
 						unique_links[link] = true
-
 						fmt.Println(link)
 					})
 					cat_links = append(cat_links, page_links[1:]...)
 				}
 			}
 		}
-
-		writeLines(links, "./result/"+name+".crawler.txt")
 		fmt.Println("Crawled " + link)
+		writeLines(links, "./result/"+name+".crawler.txt")
 	}
+
+	/*close(jobs)
+
+	for a := 0; a < len(cat_links); a++ {
+    <-results
+  }*/
+
 
 	/*var result []PropCollection
 	  var parsed PropCollection
