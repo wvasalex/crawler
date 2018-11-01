@@ -6,10 +6,12 @@
     "item": {"selector": ".xf-product-title__link"}
   },
   "parser": {
-    "title": {"selector": "h1", "prop": "Text"},
-    "category": {"selector": "li.breadcrumbs__item", "prop": "Text"},
-    "price": {"selector": "div.current-price", "filter": "Last", "prop": "Text"},
-    "description": {"selector": "ul.prcard__feat-list", "filter": "Last", "prop": "Text"},
-    "code": {"useValue": "description", "re": "Артикул:/(?P<code>\\w+)", "prop": "Re"}
+    "title": {"selector": "h1.xf-product-card__title", "prop": "Text"},
+    "category": {"selector": "li.xf-breadcrumbs__item", "prop": "Text", "concatWith": "/"},
+    "price": {"selector": ".xf-product-cost__current", "prop": "Text"},
+    "description": {"selector": ".xf-product-table", "prop": "Text", "concatWith": " "},
+    "raw_code": {"selector": ".xf-product-card__rating-vendor .muted", "prop": "Text"},
+    "code": {"useValue": "raw_code", "Re": "Артикул\\s*([0-9а-яА-Я\\w-_]+)", "prop": "Re"},    
+    "manufacturer": {"useValue": "description", "Re": "Производитель\\s*([а-яА-Я\\w-_ ]+)", "prop": "Re" }
   }
 }

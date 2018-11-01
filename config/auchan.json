@@ -1,3 +1,5 @@
+// Simple crawler is useless. Auchan uses js renderer
+
 {
   "crawler": {
     "root": {"origin": "https://www.auchan.ru"},

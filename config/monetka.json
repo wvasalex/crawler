@@ -15,10 +15,12 @@
     }
   },
   "parser": {
-    "title": {"selector": "h1", "prop": "Text"},
-    "category": {"selector": "li.breadcrumbs__item", "prop": "Text"},
-    "price": {"selector": "div.current-price", "filter": "Last", "prop": "Text"},
-    "description": {"selector": "ul.prcard__feat-list", "filter": "Last", "prop": "Text"},
-    "code": {"useValue": "description", "re": "Артикул:/(?P<code>\\w+)", "prop": "Re"}
+    "title": {"selector": "#product-card h2:not(.price)", "filter": "First", "prop": "Text"},
+    "category": {"selector": "div.breadcrumbs-entry>a", "prop": "Text", "concatWith": "/"},
+    "price": {"selector": "h2.price", "prop": "Text"},
+    "description": {"selector": "#product-card h2:not(.price) + p", "filter": "First", "prop": "Text", "concatWith": "/"},
+    "code": {"selector": "#product-card .barcode-link", "prop": "Text"},
+    "brand": {"useValue": "description", "Re": "Бренд:\\s*([а-яА-Я\\w-_ ]+)", "prop": "Re" },
+    "manufacturer": {"useValue": "description", "Re": "Производитель:\\s*([а-яА-Я\\w-_ ]+)", "prop": "Re" }
   }
 }

@@ -9,12 +9,31 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"strconv"
 )
 
-var linebreak_re = regexp.MustCompile("\n+")
+type StringMap map[string]string
+type LineReaderHandler func(string)
+type WorkerJob func() StringMap
 
+func _check(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+var space_re = regexp.MustCompile(`\s\s+`)
+var newline_re = regexp.MustCompile(`\n\n+`)
 func trim(s, replaceWith string) string {
-	return linebreak_re.ReplaceAllString(strings.TrimSpace(s), replaceWith)
+	return space_re.ReplaceAllString(
+		newline_re.ReplaceAllString(strings.TrimSpace(s), "/"),
+		replaceWith)
+}
+
+var digital_re = regexp.MustCompile("([0-9]+)")
+func getInt(s string) (int, error) {
+	match := digital_re.FindStringSubmatch(s)
+	return strconv.Atoi(match[1])
 }
 
 func writeLines(lines []string, path string) error {
@@ -29,6 +48,13 @@ func writeLines(lines []string, path string) error {
 		fmt.Fprintln(w, line)
 	}
 	return w.Flush()
+}
+
+func writeJson(raw []StringMap, path string) error {
+	data, _ := json.Marshal(raw)
+  var result_json []string
+  result_json = append(result_json, string(data))
+  return writeLines(result_json, path)
 }
 
 func readLines(path string, handler LineReaderHandler) error {
@@ -104,10 +130,11 @@ func mapArray(vs []string, f func(string) string) []string {
 	return vsm
 }
 
-type workerJob func() []string
-
-func worker(id int, jobs <-chan workerJob, results chan<- []string) {
+func worker(id int, jobs <-chan WorkerJob, results chan<- StringMap) {
 	for job := range jobs {
-    results <- job()
+		result := job()
+		if result != nil {
+			results <- result
+		}
 	}
 }

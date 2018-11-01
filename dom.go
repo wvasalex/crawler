@@ -5,9 +5,13 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
+	"time"
 )
+
+type PropReader StringMap
+type CrawlerConfig map[string]PropReader
+type PropCollection StringMap
 
 func isXML(path string) bool {
 	return strings.HasSuffix(path, ".xml")
@@ -15,7 +19,9 @@ func isXML(path string) bool {
 
 func getDOM(link string) *goquery.Document {
 	doc, err := goquery.NewDocument(link)
-	_check(err)
+	if err != nil {
+		return nil
+	}
 	return doc
 }
 
@@ -70,9 +76,14 @@ func normalizeLink(link, origin string) string {
 	return link
 }
 
-func readProp(doc *goquery.Document, desc PropReader, result PropCollection) string {
+func readProp(doc *goquery.Document, desc PropReader, result StringMap) string {
 	node := getNode(doc, desc)
 	var value string = ""
+
+	var concatWith string = desc["concatWith"]
+	if concatWith == "" {
+		concatWith = " "
+	}
 
 	switch desc["prop"] {
 	case "Text":
@@ -83,32 +94,34 @@ func readProp(doc *goquery.Document, desc PropReader, result PropCollection) str
 		value = attr
 
 	case "Re":
-		r := regexp.MustCompile(desc["re"])
+		r := regexp.MustCompile(desc["Re"])
 		match := r.FindStringSubmatch(result[desc["useValue"]])
-		if len(match) >= 1 {
+		if len(match) > 1 {
 			value = match[1]
 		} else {
 			value = ""
 		}
 	}
-
-	r := regexp.MustCompile("\n+")
-	value = r.ReplaceAllString(strings.TrimSpace(value), "/")
-
-	return value
+	return trim(value, concatWith)
 }
 
-func parse(link string, reader CrawlerConfig) PropCollection {
-	doc := getDOM(link)
-	result := make(PropCollection)
-	result["url"] = link
-	for name, prop := range reader {
-		result[name] = readProp(doc, prop, result)
+func getCrawlerOutput(name string) string {
+	return "./result/crawler/"+name+".crawler.txt"
+}
+
+func getParserOutput(name string) string {
+	return "./result/parser/"+name+".parser.txt"
+}
+
+func removeRawValues(item StringMap) StringMap {
+	var formatted StringMap = make(StringMap)
+	for key, value := range item {
+		if !strings.HasPrefix(key, "raw_") {
+			formatted[key] = value
+		}
 	}
-
-	return result
+	return formatted
 }
-
 
 func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]string) {
 	crawlerOptions := config["crawler"]
@@ -123,7 +136,6 @@ func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]
 	doc := getDOM(start)
 
 	var (
-		//poolsize, _ = strconv.Atoi(bootOptions["poolsize"])
 		cat_links    []string = grepLinks(doc, crawlerOptions["menu"]["selector"])
 		links        []string
 		unique_links map[string]bool = make(map[string]bool)
@@ -132,15 +144,7 @@ func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]
 	_normalizeLink := func(link string) string {
 		return normalizeLink(link, start)
 	}
-	
-	/*jobs := make(chan workerJob, channel_length)
-  results := make(chan string, channel_length)
 
-  for w := 1; w <= poolsize; w++ {
-    go worker(w, jobs, results)
-  }*/
-
-  fmt.Println(cat_links)
 	for i := 0; i < len(cat_links); i++ {
 		cat_link := cat_links[i]
 		link := _normalizeLink(cat_link)
@@ -152,8 +156,7 @@ func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]
 			unique_links[link] = true
 			pages := doc.Find(crawlerOptions["pagination"]["selector"])
 			if pages.Length() > 1 {
-				last_page, _ := strconv.Atoi(trim(pages.Last().Text(), ""))
-
+				last_page, _ := getInt(pages.Last().Text())
 				if last_page > 1 {
 					var page_links []string
 					pages.Each(func(i int, node *goquery.Selection) {
@@ -167,41 +170,65 @@ func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]
 				}
 			}
 		}
+		
 		fmt.Println("Crawled " + link)
-		writeLines(links, "./result/"+name+".crawler.txt")
+		writeLines(links, getCrawlerOutput(name))
 	}
+}
 
-	/*close(jobs)
+func parse(config map[string]CrawlerConfig, name string, bootOptions StringMap) PropCollection {
+  parser := config["parser"]
+  var (
+  	result []StringMap
+  	links []string
+  )
 
-	for a := 0; a < len(cat_links); a++ {
-    <-results
-  }*/
+	readLines(getCrawlerOutput(name), func(link string) {
+		links = append(links, link)
+	})
 
+	channel_length := len(links)
+	poolsize, _ := getInt(bootOptions["poolsize"])
+	sleeptime, _ := getInt(bootOptions["sleeptime"])
+	jobs := make(chan WorkerJob, channel_length)
+  results := make(chan StringMap, channel_length)
+  for w := 1; w <= poolsize; w++ {
+    go worker(w, jobs, results)
+  }
 
-	/*var result []PropCollection
-	  var parsed PropCollection
-	  var i int = 0
-	  for _, link := range links {
-	    if i >= 50 {
-	      break
-	    }
-	    if strings.TrimSpace(link) == "" {
-	      continue
-	    }
+  for _, link := range links {
+  	(func(link string) {
+			jobs <- func() StringMap {
+				if sleeptime > 0 {
+					time.Sleep(time.Second*time.Duration(sleeptime))
+				}				
+	  		doc := getDOM(link)
+	  		if doc == nil {
+	  			fmt.Println("Failed to load " + link)
+	  			return nil
+	  		}
 
-	    parsed = parseHTML(normalizeLink(link, start), config["parser"])
-	    if parsed["description"] == "" {
-	      fmt.Printf("No description on %s\n", link)
-	    } else {
-	      i = i + 1
-	      result = append(result, parsed)
-	    }
+				item := make(StringMap)
+				item["url"] = link
+				for name, prop := range parser {
+					item[name] = readProp(doc, prop, item)
+				}
+				fmt.Println("Parsed: " + link)
+				return removeRawValues(item)
+			}  
+  	})(link)
+  }
+  close(jobs)
+	
+  for a := 0; a < channel_length; a++ {
+    result = append(result, <- results)
+    if len(result) % 10 == 0 {
+			writeJson(result, getParserOutput(name))
+			fmt.Println("Saved count: ", len(result))
+    }
+  }
 
-	    fmt.Println("Parsed " + link)
-	  }
+	writeJson(result, getParserOutput(name))
 
-	  data, _ := json.Marshal(result)
-	  var result_json []string
-	  result_json = append(result_json, string(data))
-	  writeLines(result_json, name+"-results.json")*/
+	return nil
 }

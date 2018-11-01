@@ -4,7 +4,7 @@
       "origin": "https://priceguard.ru",
       "start": "https://priceguard.ru/catalog/1121180053"
     },
-    "menu": {"selector" : ".a-subcat" },
+    "menu": {"selector" : ".a-dark,.a-subcat" },
     "pagination": {"selector": ".sr-nav-num"},
     "item": {"selector": ".or-list .or-main-block a"}
   },
