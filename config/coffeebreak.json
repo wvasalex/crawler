@@ -9,10 +9,18 @@
     "item": {"selector":".products-block .product-name"}
   },
   "parser": {
-    "title": {"selector": "h1", "prop": "Text"},
-    "category": {"selector": "li.breadcrumbs__item", "prop": "Text"},
-    "price": {"selector": "div.current-price", "filter": "Last", "prop": "Text"},
-    "description": {"selector": "ul.prcard__feat-list", "filter": "Last", "prop": "Text"},
-    "code": {"useValue": "description", "re": "Артикул:/(?P<code>\\w+)", "prop": "Re"}
+    "title": {"selector": "h1.h1", "prop": "Text"},
+    "category": {"selector": ".item-breadcrumb a:not(.home)", "prop": "Text", "concatWith": "/"},
+    "price": {"selector": ".price [itemprop=\"price\"]", "prop": "Attr", "Attr": "content"},
+    "text": {"selector": "#producttab-description", "prop": "Text"},
+    "description": {
+      "selector": "#producttab-datasheet",
+      "header": "tr td span:not(.dotted-line)",
+      "value": "tr td+td", 
+      "prop": "Table",
+      "&brand": "Бренд",
+      "&code": "Штрих-код"
+    },
+    "articul": {"selector": "#product_reference [itemprop=\"sku\"]", "prop": "Attr", "Attr": "content"}
   }
 }

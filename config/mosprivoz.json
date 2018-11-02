@@ -9,10 +9,17 @@
     "item": {"selector":".desc_name"}
   },
   "parser": {
-    "title": {"selector": "h1", "prop": "Text"},
-    "category": {"selector": "li.breadcrumbs__item", "prop": "Text"},
-    "price": {"selector": "div.current-price", "filter": "Last", "prop": "Text"},
-    "description": {"selector": "ul.prcard__feat-list", "filter": "Last", "prop": "Text"},
-    "code": {"useValue": "description", "re": "Артикул:/(?P<code>\\w+)", "prop": "Re"}
+    "title": {"selector": "h1.title", "prop": "Text"},
+    "category": {"selector": ".breadcrumb a", "prop": "Text", "concatWith": "/"},
+    "price": {"selector": ".price_block meta[itemprop=\"price\"]", "prop": "Attr", "Attr": "content"},
+    "text": {"selector": ".description", "prop": "Text"},
+    "description": {
+      "selector": ".char-wrapp",
+      "header": ".char_name",
+      "value": ".char_value", 
+      "prop": "Table",
+      "&manufacturer": "Страна производитель:",
+      "&code": "Артикул:"
+    }
   }
 }

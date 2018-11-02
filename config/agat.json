@@ -4,15 +4,13 @@
       "origin": "http://tdagat-shop.ru",
       "start": "http://tdagat-shop.ru"
     },
-    "menu": {"selector" : ".line-top>.bxr-bg-hover-flat>a" },
+    "menu": {"selector" : ".line-top .bxr-classic_hover_menu >ul>.bxr-bg-hover-flat>a" },
     "pagination": {"selector": ".navigation-pages a:not(.navigation-button)"},
     "item": {"selector": ".bxr-element-name a"}
   },
   "parser": {
     "title": {"selector": "h1", "prop": "Text"},
-    "category": {"selector": "li.breadcrumbs__item", "prop": "Text"},
-    "price": {"selector": "div.current-price", "filter": "Last", "prop": "Text"},
-    "description": {"selector": "ul.prcard__feat-list", "filter": "Last", "prop": "Text"},
-    "code": {"useValue": "description", "re": "Артикул:/(?P<code>\\w+)", "prop": "Re"}
+    "category": {"selector": ".bx-breadcrumb-item a", "prop": "Text", "concatWith": "/"},
+    "code": {"selector": ".bxr-article-value", "prop": "Text"}
   }
 }

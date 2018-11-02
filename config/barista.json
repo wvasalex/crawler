@@ -10,9 +10,16 @@
   },
   "parser": {
     "title": {"selector": "h1", "prop": "Text"},
-    "category": {"selector": "li.breadcrumbs__item", "prop": "Text"},
-    "price": {"selector": "div.current-price", "filter": "Last", "prop": "Text"},
-    "description": {"selector": "ul.prcard__feat-list", "filter": "Last", "prop": "Text"},
-    "code": {"useValue": "description", "re": "Артикул:/(?P<code>\\w+)", "prop": "Re"}
+    "category": {"selector": ".breadcrumb a", "prop": "Text", "concatWith": "/"},
+    "price": {"selector": "#block_price", "prop": "Text"},
+    "text": {"selector": "#tab_description", "prop": "Text"},
+    "description": {
+      "selector": ".tab-pane .extra_fields",
+      "header": ".extra_fields_name",
+      "value": ".extra_fields_value", 
+      "prop": "Table",
+      "&code": "Штрих-код"
+    },
+    "manufacturer": {"selector": ".manufacturer_name span", "filter": "First", "prop": "Text"}
   }
 }

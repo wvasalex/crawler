@@ -10,6 +10,7 @@ var (
 	config = flag.String("config", "", "Config file name from ./config dir")
 	poolsize = flag.String("poolsize", "50", "Workers pool size")
 	sleeptime = flag.String("sleeptime", "2", "Worker sleep time before start, sec.")
+	debug = flag.String("debug", "", "Is app in debug mode")
 )
 
 
@@ -26,6 +27,7 @@ func main() {
 	bootConfig = make(StringMap)
 	bootConfig["poolsize"] = *poolsize
 	bootConfig["sleeptime"] = *sleeptime
+	bootConfig["debug"] = *debug
 
 	if *app == "crawler" {
 		crawl(readerConfig, *config, bootConfig)

@@ -71,6 +71,11 @@ func readLines(path string, handler LineReaderHandler) error {
 	return sc.Err()
 }
 
+func stringifyJSON(raw StringMap) string {
+	data, _ := json.Marshal(raw)
+	return string(data)
+}
+
 func parseSitemap(link string, local bool) []string {
 	var accumulator []string
 

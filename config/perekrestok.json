@@ -9,9 +9,14 @@
     "title": {"selector": "h1.xf-product-card__title", "prop": "Text"},
     "category": {"selector": "li.xf-breadcrumbs__item", "prop": "Text", "concatWith": "/"},
     "price": {"selector": ".xf-product-cost__current", "prop": "Text"},
-    "description": {"selector": ".xf-product-table", "prop": "Text", "concatWith": " "},
-    "raw_code": {"selector": ".xf-product-card__rating-vendor .muted", "prop": "Text"},
-    "code": {"useValue": "raw_code", "Re": "Артикул\\s*([0-9а-яА-Я\\w-_]+)", "prop": "Re"},    
-    "manufacturer": {"useValue": "description", "Re": "Производитель\\s*([а-яА-Я\\w-_ ]+)", "prop": "Re" }
+    "description": {
+      "selector": ".xf-product-table__row",
+      "header": ".xf-product-table__col-header",
+      "value": ".xf-product-table__col", 
+      "prop": "Table",
+      "&manufacturer": "Производитель"
+    },
+    "raw_code": {"selector": ".xf-product-card__rating-vendor", "prop": "Text"},
+    "code": {"useValue": "raw_code", "Re": "Артикул\\s*([0-9а-яА-Я\\w-_]+)", "prop": "Re"}
   }
 }

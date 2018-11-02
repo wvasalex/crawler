@@ -7,11 +7,19 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"golang.org/x/text/encoding/charmap"
 )
 
 type PropReader StringMap
 type CrawlerConfig map[string]PropReader
 type PropCollection StringMap
+
+func decode(ba string) string {
+	return ba;
+	dec := charmap.Windows1251.NewDecoder()
+	out, _ := dec.Bytes([]byte(ba))
+	return string(out)
+}
 
 func isXML(path string) bool {
 	return strings.HasSuffix(path, ".xml")
@@ -87,7 +95,9 @@ func readProp(doc *goquery.Document, desc PropReader, result StringMap) string {
 
 	switch desc["prop"] {
 	case "Text":
-		value = node.Text()
+		value = strings.Join(node.Map(func(i int, item *goquery.Selection) string {
+			return item.Text()
+		}), concatWith)
 
 	case "Attr":
 		attr, _ := node.Attr(desc["Attr"])
@@ -101,8 +111,27 @@ func readProp(doc *goquery.Document, desc PropReader, result StringMap) string {
 		} else {
 			value = ""
 		}
+
+	case "Table":
+		keys := node.Find(desc["header"])
+		values := node.Find(desc["value"])
+
+		var table StringMap = make(StringMap)
+		keys.Each(func(i int, node *goquery.Selection) {
+			var key string = trim(node.Text(), "")
+			table[decode(key)] = decode(trim(values.Eq(i).Text(), ""))
+		})
+		for key, value := range desc {
+			if strings.HasPrefix(key, "&") {
+				result[strings.Replace(key, "&", "", 1)] = table[value]
+			}
+		}
+
+		value = stringifyJSON(table)
+		return value
 	}
-	return trim(value, concatWith)
+
+	return decode(trim(value, concatWith))
 }
 
 func getCrawlerOutput(name string) string {
@@ -110,7 +139,7 @@ func getCrawlerOutput(name string) string {
 }
 
 func getParserOutput(name string) string {
-	return "./result/parser/"+name+".parser.txt"
+	return "./result/parser/"+name+".parser.json"
 }
 
 func removeRawValues(item StringMap) StringMap {
@@ -179,6 +208,7 @@ func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]
 func parse(config map[string]CrawlerConfig, name string, bootOptions StringMap) PropCollection {
   parser := config["parser"]
   var (
+  	debug bool = bootOptions["debug"] != ""
   	result []StringMap
   	links []string
   )
@@ -186,7 +216,10 @@ func parse(config map[string]CrawlerConfig, name string, bootOptions StringMap) 
 	readLines(getCrawlerOutput(name), func(link string) {
 		links = append(links, link)
 	})
-
+	if debug {
+		links = links[:10]
+	}
+	
 	channel_length := len(links)
 	poolsize, _ := getInt(bootOptions["poolsize"])
 	sleeptime, _ := getInt(bootOptions["sleeptime"])
@@ -229,6 +262,7 @@ func parse(config map[string]CrawlerConfig, name string, bootOptions StringMap) 
   }
 
 	writeJson(result, getParserOutput(name))
+	//.map(a => { a.category=a.category.replace(/([а-яё])([А-ЯЁ])/g, '$1/$2');  return a})
 
 	return nil
 }
