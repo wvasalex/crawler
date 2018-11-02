@@ -33,6 +33,9 @@ func trim(s, replaceWith string) string {
 var digital_re = regexp.MustCompile("([0-9]+)")
 func getInt(s string) (int, error) {
 	match := digital_re.FindStringSubmatch(s)
+	if len(match) < 2 {
+		fmt.Println(s)
+	}
 	return strconv.Atoi(match[1])
 }
 

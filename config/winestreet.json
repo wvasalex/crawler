@@ -1,0 +1,26 @@
+{
+  "crawler": {
+    "root": {
+      "origin": "https://winestreet.ru",
+      "start": "https://winestreet.ru/catalog/"
+    },
+    "menu": {"selector" : ".category-preview" },
+    "pagination": {"selector": ".pagination a", "filter": "0:-1"},
+    "item": {"selector": ".catalog_list .goods_name a"}
+  },
+  "parser": {
+    "title": {"selector": "h1", "prop": "Text"},
+    "category": {"selector": ".breadcrumbs a", "filter": "2:0", "prop": "Text", "concatWith": "/"},
+    "price": {"selector": ".price", "filter": "First", "prop": "Text"},
+    "text": {"selector": ".product_description_full", "prop": "Text"},
+    "description": {
+      "selector": ".p_info",
+      "header": "strong",
+      "value": "span", 
+      "prop": "Table",
+      "&brand": "Бренд:",
+      "&manufacturer": "Страна:"
+    },
+    "code": {"selector": ".main_product_info .code [itemprop=\"sku\"]", "prop": "Text", "concatWith": "/"}
+  }
+}

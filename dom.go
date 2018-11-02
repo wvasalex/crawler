@@ -47,14 +47,26 @@ func getNode(doc *goquery.Document, desc PropReader) *goquery.Selection {
 
 	node := doc.Find(desc["selector"])
 
-	switch desc["filter"] {
-	case "Last":
-		node = node.Last()
+	if desc["filter"] != "" {
+		switch desc["filter"] {
+		case "Last":
+			node = node.Last()
 
-	case "First":
-		node = node.First()
+		case "First":
+			node = node.First()
+
+		default:
+			if node.Length() > 0 {
+				var slices []string = strings.Split(desc["filter"], ":")
+				start, _ := getInt(slices[0])
+				end, _ := getInt(slices[1])
+				if end == 0 {
+					end = node.Length()
+				}
+				node = node.Slice(start, end)
+			}			
+		}
 	}
-
 	return node
 }
 
@@ -67,14 +79,14 @@ func grepLinks(doc *goquery.Document, selector string) []string {
 	return getKeys(links)
 }
 
-func normalizeLink(link, origin string) string {
+func normalizeLink(link, origin, base string) string {
 	if strings.HasPrefix(link, "./") {
-		parts := strings.Split(origin, "/")
+		parts := strings.Split(base, "/")
 		return strings.Join(parts[:len(parts)-1], "/") +
 			strings.Replace(link, "./", "/", -1)
 	}
 	if strings.HasPrefix(link, "../") {
-		parts := strings.Split(origin, "/")
+		parts := strings.Split(base, "/")
 		return strings.Join(parts[:len(parts)-2], "/") +
 			strings.Replace(link, "../", "/", -1)
 	}
@@ -155,6 +167,7 @@ func removeRawValues(item StringMap) StringMap {
 func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]string) {
 	crawlerOptions := config["crawler"]
 	var (
+		debug bool = bootOptions["debug"] != ""
 		origin string = crawlerOptions["root"]["origin"]
 		start  string = crawlerOptions["root"]["start"]
 	)
@@ -170,8 +183,12 @@ func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]
 		unique_links map[string]bool = make(map[string]bool)
 	)
 
+	if debug {
+		cat_links = cat_links[:1]
+	}
+
 	_normalizeLink := func(link string) string {
-		return normalizeLink(link, start)
+		return normalizeLink(link, origin, start)
 	}
 
 	for i := 0; i < len(cat_links); i++ {
@@ -183,7 +200,7 @@ func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]
 
 		if unique_links[link] != true {
 			unique_links[link] = true
-			pages := doc.Find(crawlerOptions["pagination"]["selector"])
+			pages := getNode(doc, crawlerOptions["pagination"])			
 			if pages.Length() > 1 {
 				last_page, _ := getInt(pages.Last().Text())
 				if last_page > 1 {
