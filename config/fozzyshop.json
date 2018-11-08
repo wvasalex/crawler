@@ -1,0 +1,28 @@
+{
+  "crawler": {
+    "root": {
+      "origin": "http://fozzyshop.com.ua",
+      "start": "http://fozzyshop.com.ua/300070-vina-tikhie"
+    },
+    "menu": {"selector" : ".subcategory-name" },
+    "pagination": {"selector": ".pagination a:not([rel])"},
+    "item": {"selector": "#product_list .product-name"}
+  },
+  "parser": {
+    "title": {"selector": "h1", "prop": "Text"},
+    "category": {"selector": ".navigation_page a", "prop": "Text", "filter": "1:0", "concatWith": "/"},
+    "brand": {
+      "selector": "#product_brand .manname",
+      "prop": "Text"
+    },
+    "articul": {"selector": "#product_reference span", "prop": "Text"},
+    "code": {"selector": "#product_ean13 span", "prop": "Text"},
+    "text": {"selector": "#descriptionTab", "prop": "Text"},
+    "description": {
+      "selector": "#featuresTab",
+      "header": "tr>td:first-of-type",
+      "value": "tr>td+td",
+      "prop": "Table"
+    }
+  }
+}

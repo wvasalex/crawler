@@ -1,0 +1,27 @@
+{
+  "crawler": {
+    "root": {
+      "origin": "https://xn----7sbabas4ajkhfocclk9d3cvfsa.xn--p1ai",
+      "start": "https://xn----7sbabas4ajkhfocclk9d3cvfsa.xn--p1ai/catalog/"
+    },
+    "menu": {"selector" : ".gategories-lists__item a" },
+    "pagination": {"selector": ".pagination a:not([aria-label])"},
+    "item": {"selector": ".products-slider__item__name a"}
+  },
+  "parser": {
+    "title": {"selector": "h1", "prop": "Text"},
+    "category": {"selector": ".breadcrumb a", "prop": "Text", "filter": "1:0", "concatWith": "/"},
+    "description": {
+      "selector": ".tab-section table",
+      "filter": "0:3",
+      "header": "th",
+      "value": "th+td", 
+      "prop": "Table"
+    },
+    "code": {
+      "selector": ".panel-stats [gtin]",
+      "prop": "Attr",
+      "Attr": "gtin"
+    }
+  }
+}

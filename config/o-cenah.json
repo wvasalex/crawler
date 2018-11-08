@@ -1,0 +1,21 @@
+{
+  "crawler": {
+    "root": {
+      "origin": "http://xn----8sbo6ac0cd.xn--p1ai/",
+      "start": "http://xn----8sbo6ac0cd.xn--p1ai/"
+    },
+    "menu": {"selector": "#sideLeft a[title]"},
+    "pagination": {"selector": "#content center a"},
+    "item": {"selector": "#content>a"}
+  },
+  "parser": {
+    "title": {"selector": "h1", "prop": "Text"},
+    "description": {
+      "selector": "#content>p",
+      "filter": "First",
+      "prop": "Text",
+      "concatWith": "/"
+    },
+    "code": {"useValue": "description", "Re": "код[^0-9]*([0-9]+)", "prop": "Re"}
+  }
+}

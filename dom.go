@@ -28,6 +28,7 @@ func isXML(path string) bool {
 func getDOM(link string) *goquery.Document {
 	doc, err := goquery.NewDocument(link)
 	if err != nil {
+		panic(err)
 		return nil
 	}
 	return doc
@@ -56,12 +57,13 @@ func getNode(doc *goquery.Document, desc PropReader) *goquery.Selection {
 			node = node.First()
 
 		default:
-			if node.Length() > 0 {
+			var len int = node.Length()
+			if len > 0 {
 				var slices []string = strings.Split(desc["filter"], ":")
 				start, _ := getInt(slices[0])
 				end, _ := getInt(slices[1])
-				if end == 0 {
-					end = node.Length()
+				if end == 0 || end > len {
+					end = len
 				}
 				node = node.Slice(start, end)
 			}			
@@ -177,14 +179,19 @@ func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]
 
 	doc := getDOM(start)
 
+	if doc == nil {
+		fmt.Println("DOC is broken!",start)
+		return
+	}
+
 	var (
 		cat_links    []string = grepLinks(doc, crawlerOptions["menu"]["selector"])
 		links        []string
 		unique_links map[string]bool = make(map[string]bool)
 	)
 
-	if debug {
-		cat_links = cat_links[:1]
+	if debug && len(cat_links) > 3 {
+		cat_links = cat_links[:3]
 	}
 
 	_normalizeLink := func(link string) string {
@@ -200,10 +207,11 @@ func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]
 
 		if unique_links[link] != true {
 			unique_links[link] = true
-			pages := getNode(doc, crawlerOptions["pagination"])			
+			pages := getNode(doc, crawlerOptions["pagination"])		
 			if pages.Length() > 1 {
 				last_page, _ := getInt(pages.Last().Text())
 				if last_page > 1 {
+					fmt.Println("last page is",pages.Length(),last_page)
 					var page_links []string
 					pages.Each(func(i int, node *goquery.Selection) {
 						href, _ := node.Attr("href")
@@ -236,7 +244,7 @@ func parse(config map[string]CrawlerConfig, name string, bootOptions StringMap) 
 	if debug {
 		links = links[:10]
 	}
-	
+
 	channel_length := len(links)
 	poolsize, _ := getInt(bootOptions["poolsize"])
 	sleeptime, _ := getInt(bootOptions["sleeptime"])

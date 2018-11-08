@@ -1,0 +1,25 @@
+{
+  "crawler": {
+    "root": {
+      "origin": "http://provino.ua",
+      "start": "http://provino.ua"
+    },
+    "menu": {"selector" : ".main-navigation>li>a", "filter": "1:0"},
+    "pagination": {"selector": ".pagination a"},
+    "item": {"selector": ".category_products .product-name a"}
+  },
+  "parser": {
+    "title": {"selector": "h1.op-title", "prop": "Text"},
+    "category": {"selector": "li.breadcrumb-item", "prop": "Text", "concatWith": "/"},
+    "price": {"selector": ".or-price", "filter": "First", "prop": "Text"},
+    "text": {"selector": ".op-desc", "prop": "Text"},
+    "description": {
+      "selector": ".op-details-td-details-td table",
+      "header": "td.nw",
+      "value": "td.pl15", 
+      "prop": "Table",
+      "&manufacturer": "Производитель",
+      "&code": "Код товара"
+    }
+  }
+}
