@@ -28,7 +28,7 @@ func isXML(path string) bool {
 func getDOM(link string) *goquery.Document {
 	doc, err := goquery.NewDocument(link)
 	if err != nil {
-		panic(err)
+		//panic(err)
 		return nil
 	}
 	return doc
@@ -188,10 +188,13 @@ func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]
 		cat_links    []string = grepLinks(doc, crawlerOptions["menu"]["selector"])
 		links        []string
 		unique_links map[string]bool = make(map[string]bool)
+		parsed_links map[string]bool = make(map[string]bool)
 	)
 
+	sleeptime, _ := getInt(bootOptions["sleeptime"])
+
 	if debug && len(cat_links) > 3 {
-		cat_links = cat_links[:3]
+		cat_links = cat_links[:1]
 	}
 
 	_normalizeLink := func(link string) string {
@@ -199,34 +202,39 @@ func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]
 	}
 
 	for i := 0; i < len(cat_links); i++ {
+		if sleeptime > 0 {
+			time.Sleep(time.Second*time.Duration(sleeptime))
+		}
+
 		cat_link := cat_links[i]
 		link := _normalizeLink(cat_link)
 		doc = getDOM(link)
-		products := grepLinks(doc, crawlerOptions["item"]["selector"])
-		links = append(links, mapArray(products, _normalizeLink)...)
+		if parsed_links[link] != true {
+			parsed_links[link] = true
+			products := grepLinks(doc, crawlerOptions["item"]["selector"])
+			links = append(links, mapArray(products, _normalizeLink)...)
+			writeLines(links, getCrawlerOutput(name))	
+			fmt.Println("Crawled " + link)
+		}
 
-		if unique_links[link] != true {
+		if unique_links[link] != true {	
 			unique_links[link] = true
 			pages := getNode(doc, crawlerOptions["pagination"])		
 			if pages.Length() > 1 {
 				last_page, _ := getInt(pages.Last().Text())
 				if last_page > 1 {
-					fmt.Println("last page is",pages.Length(),last_page)
 					var page_links []string
 					pages.Each(func(i int, node *goquery.Selection) {
 						href, _ := node.Attr("href")
 						page_links = append(page_links, href)
-						link = _normalizeLink(href)
-						unique_links[link] = true
-						fmt.Println(link)
+						//link = _normalizeLink(href)
+						//unique_links[link] = true
+						//fmt.Println(link)
 					})
 					cat_links = append(cat_links, page_links[1:]...)
 				}
 			}
 		}
-		
-		fmt.Println("Crawled " + link)
-		writeLines(links, getCrawlerOutput(name))
 	}
 }
 
@@ -291,3 +299,13 @@ func parse(config map[string]CrawlerConfig, name string, bootOptions StringMap) 
 
 	return nil
 }
+
+//a.map(i => {
+//	i.code=(i.title.match(/\(([^\)]+)\)$/) || {})[1];
+//	i.title=i.title.replace(/\([^\)]+\)$/, '').trim();
+//	return i;
+//})
+
+//a[0].title.match(/\(([^\)]+)\)$/)
+//a[0].title.replace(/\([^\)]+\)$/, '').trim()
+

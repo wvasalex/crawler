@@ -1,0 +1,22 @@
+{
+  "crawler": {
+    "root": {
+      "origin": "https://rozetka.com.ua",
+      "start": "https://rozetka.com.ua/alkogolnie-napitki-konfety/c4594201/"
+    },
+    "menu": {"selector" : ".pab-items-i a:not(.arrow-link)"},
+    "pagination": {"selector": ".paginator-catalog-l-i a"},
+    "item": {"selector": ".g-i-tile-i-title a"}
+  },
+  "parser": {
+    "title": {"selector": "h1.h1", "prop": "Text"},
+    "category": {"selector": ".breadcrumbs-i a", "filter": "1:0", "prop": "Text", "concatWith": "/"},
+    "description": {
+      "selector": ".cust-details",
+      "header": ".chars-title",
+      "value": ".chars-value", 
+      "prop": "Table",
+      "&manufacturer": "Страна:"
+    }
+  }
+}

@@ -1,3 +1,4 @@
 .idea
-result/*.json
+result/**/*.json
+result/**/*.txt
 .DS_Store

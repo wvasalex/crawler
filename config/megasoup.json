@@ -1,0 +1,28 @@
+{
+  "crawler": {
+    "root": {
+      "origin": "https://megasoap.ru",
+      "start": "https://megasoap.ru"
+    },
+    "menu": {"selector" : ".bx_children_block a" },
+    "pagination": {
+      "selector": ".bx-pagination-container li:not(.bx-pag-prev):not(.bx-pag-next) a"
+    },
+    "item": {"selector": ".bx_catalog_item_title a"}
+  },
+  "parser": {
+    "title": {"selector": "h1", "prop": "Text"},
+    "category": {"selector": ".bx-breadcrumb-item a", "filter": "2:0", "prop": "Text", "concatWith": "/"},
+    "price": {"selector": ".item_current_price", "filter": "First", "prop": "Attr", "Attr": "content"},
+    "text": {"selector": ".bx_item_description", "prop": "Text"},
+    "description": {
+      "selector": ".item_info_section",
+      "header": "dt",
+      "value": "dd", 
+      "prop": "Table",
+      "&articul": "Артикул",
+      "&code": "Штрихкод",
+      "&manufacturer": "Производитель"
+    }
+  }
+}
