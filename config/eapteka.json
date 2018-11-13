@@ -1,0 +1,25 @@
+{
+  "crawler": {
+    "root": {
+      "origin": "https://www.eapteka.ru",
+      "start": "https://www.eapteka.ru"
+    },
+    "menu": {"selector" : ".header--nav-link" },
+    "pagination": {"selector": "#section_nav_top a"},
+    "item": {"selector": ".product-list .cc-item--title"}
+  },
+  "parser": {
+    "title": {"selector": "h1.op-title", "prop": "Text"},
+    "category": {"selector": "li.breadcrumb-item", "prop": "Text", "concatWith": "/"},
+    "price": {"selector": ".or-price", "filter": "First", "prop": "Text"},
+    "text": {"selector": ".op-desc", "prop": "Text"},
+    "description": {
+      "selector": ".op-details-td-details-td table",
+      "header": "td.nw",
+      "value": "td.pl15", 
+      "prop": "Table",
+      "&manufacturer": "Производитель",
+      "&code": "Код товара"
+    }
+  }
+}

@@ -8,8 +8,8 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 type StringMap map[string]string
@@ -24,6 +24,7 @@ func _check(err error) {
 
 var space_re = regexp.MustCompile(`\s\s+`)
 var newline_re = regexp.MustCompile(`\n\n+`)
+
 func trim(s, replaceWith string) string {
 	return space_re.ReplaceAllString(
 		newline_re.ReplaceAllString(strings.TrimSpace(s), "/"),
@@ -31,10 +32,16 @@ func trim(s, replaceWith string) string {
 }
 
 var digital_re = regexp.MustCompile("([0-9]+)")
+
 func getInt(s string) (int, error) {
+	if s == "" {
+		return 0, nil
+	}
+
 	match := digital_re.FindStringSubmatch(s)
 	if len(match) < 2 {
-		fmt.Println(s)
+		fmt.Println("Cannot get int", s)
+		return 0, nil
 	}
 	return strconv.Atoi(match[1])
 }
@@ -55,9 +62,9 @@ func writeLines(lines []string, path string) error {
 
 func writeJson(raw []StringMap, path string) error {
 	data, _ := json.Marshal(raw)
-  var result_json []string
-  result_json = append(result_json, string(data))
-  return writeLines(result_json, path)
+	var result_json []string
+	result_json = append(result_json, string(data))
+	return writeLines(result_json, path)
 }
 
 func readLines(path string, handler LineReaderHandler) error {
@@ -72,6 +79,14 @@ func readLines(path string, handler LineReaderHandler) error {
 		handler(sc.Text())
 	}
 	return sc.Err()
+}
+
+func readAllLines(path string) ([]string, error) {
+	lines, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	return strings.Split(string(lines), "\n"), nil
 }
 
 func stringifyJSON(raw StringMap) string {

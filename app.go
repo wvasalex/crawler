@@ -6,13 +6,12 @@ import (
 )
 
 var (
-	app    = flag.String("app", "", "Application name. Crawler | Parser")
-	config = flag.String("config", "", "Config file name from ./config dir")
-	poolsize = flag.String("poolsize", "50", "Workers pool size")
+	app       = flag.String("app", "", "Application name. Crawler | Parser")
+	config    = flag.String("config", "", "Config file name from ./config dir")
+	poolsize  = flag.String("poolsize", "50", "Workers pool size")
 	sleeptime = flag.String("sleeptime", "2", "Worker sleep time before start, sec.")
-	debug = flag.String("debug", "", "Is app in debug mode")
+	debug     = flag.String("debug", "", "Is app in debug mode")
 )
-
 
 func main() {
 	flag.Parse()
@@ -22,7 +21,7 @@ func main() {
 		return
 	}
 
-	var readerConfig map[string]CrawlerConfig = readConfig(*config) 
+	var readerConfig map[string]CrawlerConfig = readConfig(*config)
 	var bootConfig StringMap
 	bootConfig = make(StringMap)
 	bootConfig["poolsize"] = *poolsize

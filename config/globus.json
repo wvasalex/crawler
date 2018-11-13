@@ -1,0 +1,24 @@
+{
+  "crawler": {
+    "root": {
+      "input": "globus_codes.txt",
+      "origin": "https://online.globus.ru",
+      "start": "https://online.globus.ru/search/?q="
+    },
+    "item": {"selector": ".catalog-section__item__link"}
+  },
+  "parser": {
+    "title": {"selector": ".item-card--detail h1", "prop": "Text"},
+    "category": {"selector": ".nav_breadcrumbs a", "filter": "2:0", "prop": "Text", "concatWith": "/"},
+    "price": {"selector": ".item-card--detail .item-price__num meta[itemprop=\"price\"]", "filter": "Last", "prop": "Attr", "Attr": "content"},
+    "description": {
+      "selector": ".item-card__descr table",
+      "header": "td:first-of-type",
+      "value": "td+td", 
+      "prop": "Table",
+      "&brand": "Бренд",
+      "&manufacturer": "Производитель",
+      "&article": "Номер артикула"
+    }
+  }
+}

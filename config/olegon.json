@@ -1,0 +1,15 @@
+{
+  "crawler": {
+    "root": {
+      "input": "product_codes.txt",
+      "origin": "https://barcodes.olegon.ru/",
+      "start": "https://barcodes.olegon.ru/index.php?c="
+    }
+  },
+  "parser": {
+    "title": {"selector": "#names script", "prop": "Text"},
+    "category": {"selector": ".nav_breadcrumbs a", "filter": "2:0", "prop": "Text", "concatWith": "/"},
+    "manufacturer": {"selector": "#producers", "prop": "Text"},
+    "text": {"selector": "#props", "prop": "Text"}
+  }
+}

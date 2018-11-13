@@ -1,0 +1,17 @@
+{
+  "crawler": {
+    "root": {
+      "origin": "https://produkty24.com.ua",
+      "start": "https://produkty24.com.ua/alkogol-i-napitki/alkogolnyie-napitki/vina/"
+    },
+    "menu": {"selector" : ".items a.inner" },
+    "pagination": {"selector": ".pagination a:not([rel])"},
+    "item": {"selector": "#products_box a.inner"}
+  },
+  "parser": {
+    "title": {"selector": "h1", "prop": "Text"},
+    "category": {"selector": ".bread>li>a", "filter": "2:0", "prop": "Text", "concatWith": "/"},
+    "text": {"selector": ".manufacturer", "prop": "Text"},
+    "code": {"selector": ".code span", "prop": "Text"}
+  }
+}

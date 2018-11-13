@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"golang.org/x/text/encoding/charmap"
 	"os"
 	"regexp"
 	"strings"
 	"time"
-	"golang.org/x/text/encoding/charmap"
 )
 
 type PropReader StringMap
@@ -15,7 +15,7 @@ type CrawlerConfig map[string]PropReader
 type PropCollection StringMap
 
 func decode(ba string) string {
-	return ba;
+	return ba
 	dec := charmap.Windows1251.NewDecoder()
 	out, _ := dec.Bytes([]byte(ba))
 	return string(out)
@@ -66,7 +66,7 @@ func getNode(doc *goquery.Document, desc PropReader) *goquery.Selection {
 					end = len
 				}
 				node = node.Slice(start, end)
-			}			
+			}
 		}
 	}
 	return node
@@ -149,11 +149,11 @@ func readProp(doc *goquery.Document, desc PropReader, result StringMap) string {
 }
 
 func getCrawlerOutput(name string) string {
-	return "./result/crawler/"+name+".crawler.txt"
+	return "./result/crawler/" + name + ".crawler.txt"
 }
 
 func getParserOutput(name string) string {
-	return "./result/parser/"+name+".parser.json"
+	return "./result/parser/" + name + ".parser.json"
 }
 
 func removeRawValues(item StringMap) StringMap {
@@ -166,10 +166,76 @@ func removeRawValues(item StringMap) StringMap {
 	return formatted
 }
 
-func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]string) {
+func crawlUrls(paths []string, config map[string]CrawlerConfig, name string, bootOptions map[string]string) {
 	crawlerOptions := config["crawler"]
 	var (
-		debug bool = bootOptions["debug"] != ""
+		debug  bool   = bootOptions["debug"] != ""
+		origin string = crawlerOptions["root"]["origin"]
+		start  string = crawlerOptions["root"]["start"]
+	)
+
+	doc := getDOM(origin)
+
+	if doc == nil {
+		fmt.Println("DOC is broken!", origin)
+		return
+	}
+
+	sleeptime, _ := getInt(bootOptions["sleeptime"])
+	_normalizeLink := func(link string) string {
+		return normalizeLink(link, origin, origin)
+	}
+
+	var (
+		links         []string
+		parsed_links  map[string]bool = make(map[string]bool)
+		item_selector string          = crawlerOptions["item"]["selector"]
+	)
+
+	if item_selector == "" {
+		sleeptime = 0
+	}
+
+	if debug && len(paths) > 1 {
+		paths = paths[:10]
+	}
+	for i := 0; i < len(paths); i++ {
+		if sleeptime > 0 {
+			time.Sleep(time.Second * time.Duration(sleeptime))
+		}
+
+		url := start + paths[i]
+		link := _normalizeLink(url)
+		fmt.Println(link)
+
+		if parsed_links[link] != true {
+			parsed_links[link] = true
+
+			if item_selector != "" {
+				doc = getDOM(link)
+				products := grepLinks(doc, item_selector)
+				links = append(links, mapArray(products, _normalizeLink)...)
+			} else {
+				links = append(links, link)
+			}
+			writeLines(links, getCrawlerOutput(name))
+			fmt.Println("Crawled " + link)
+		}
+	}
+}
+
+func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]string) {
+	crawlerOptions := config["crawler"]
+
+	if crawlerOptions["root"]["input"] != "" {
+		lines, _ := readAllLines("./input/" + crawlerOptions["root"]["input"])
+		fmt.Println("crawl", "./input/"+crawlerOptions["root"]["input"], lines)
+		crawlUrls(lines, config, name, bootOptions)
+		return
+	}
+
+	var (
+		debug  bool   = bootOptions["debug"] != ""
 		origin string = crawlerOptions["root"]["origin"]
 		start  string = crawlerOptions["root"]["start"]
 	)
@@ -180,7 +246,7 @@ func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]
 	doc := getDOM(start)
 
 	if doc == nil {
-		fmt.Println("DOC is broken!",start)
+		fmt.Println("DOC is broken!", start)
 		return
 	}
 
@@ -191,19 +257,18 @@ func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]
 		parsed_links map[string]bool = make(map[string]bool)
 	)
 
-	sleeptime, _ := getInt(bootOptions["sleeptime"])
-
 	if debug && len(cat_links) > 3 {
-		cat_links = cat_links[:1]
+		cat_links = cat_links[:3]
 	}
 
+	sleeptime, _ := getInt(bootOptions["sleeptime"])
 	_normalizeLink := func(link string) string {
 		return normalizeLink(link, origin, start)
 	}
 
 	for i := 0; i < len(cat_links); i++ {
 		if sleeptime > 0 {
-			time.Sleep(time.Second*time.Duration(sleeptime))
+			time.Sleep(time.Second * time.Duration(sleeptime))
 		}
 
 		cat_link := cat_links[i]
@@ -213,13 +278,13 @@ func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]
 			parsed_links[link] = true
 			products := grepLinks(doc, crawlerOptions["item"]["selector"])
 			links = append(links, mapArray(products, _normalizeLink)...)
-			writeLines(links, getCrawlerOutput(name))	
+			writeLines(links, getCrawlerOutput(name))
 			fmt.Println("Crawled " + link)
 		}
 
-		if unique_links[link] != true {	
+		if unique_links[link] != true {
 			unique_links[link] = true
-			pages := getNode(doc, crawlerOptions["pagination"])		
+			pages := getNode(doc, crawlerOptions["pagination"])
 			if pages.Length() > 1 {
 				last_page, _ := getInt(pages.Last().Text())
 				if last_page > 1 {
@@ -227,9 +292,6 @@ func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]
 					pages.Each(func(i int, node *goquery.Selection) {
 						href, _ := node.Attr("href")
 						page_links = append(page_links, href)
-						//link = _normalizeLink(href)
-						//unique_links[link] = true
-						//fmt.Println(link)
 					})
 					cat_links = append(cat_links, page_links[1:]...)
 				}
@@ -239,12 +301,12 @@ func crawl(config map[string]CrawlerConfig, name string, bootOptions map[string]
 }
 
 func parse(config map[string]CrawlerConfig, name string, bootOptions StringMap) PropCollection {
-  parser := config["parser"]
-  var (
-  	debug bool = bootOptions["debug"] != ""
-  	result []StringMap
-  	links []string
-  )
+	parser := config["parser"]
+	var (
+		debug  bool = bootOptions["debug"] != ""
+		result []StringMap
+		links  []string
+	)
 
 	readLines(getCrawlerOutput(name), func(link string) {
 		links = append(links, link)
@@ -257,22 +319,22 @@ func parse(config map[string]CrawlerConfig, name string, bootOptions StringMap) 
 	poolsize, _ := getInt(bootOptions["poolsize"])
 	sleeptime, _ := getInt(bootOptions["sleeptime"])
 	jobs := make(chan WorkerJob, channel_length)
-  results := make(chan StringMap, channel_length)
-  for w := 1; w <= poolsize; w++ {
-    go worker(w, jobs, results)
-  }
+	results := make(chan StringMap, channel_length)
+	for w := 1; w <= poolsize; w++ {
+		go worker(w, jobs, results)
+	}
 
-  for _, link := range links {
-  	(func(link string) {
+	for _, link := range links {
+		(func(link string) {
 			jobs <- func() StringMap {
 				if sleeptime > 0 {
-					time.Sleep(time.Second*time.Duration(sleeptime))
-				}				
-	  		doc := getDOM(link)
-	  		if doc == nil {
-	  			fmt.Println("Failed to load " + link)
-	  			return nil
-	  		}
+					time.Sleep(time.Second * time.Duration(sleeptime))
+				}
+				doc := getDOM(link)
+				if doc == nil {
+					fmt.Println("Failed to load " + link)
+					return nil
+				}
 
 				item := make(StringMap)
 				item["url"] = link
@@ -281,31 +343,27 @@ func parse(config map[string]CrawlerConfig, name string, bootOptions StringMap) 
 				}
 				fmt.Println("Parsed: " + link)
 				return removeRawValues(item)
-			}  
-  	})(link)
-  }
-  close(jobs)
-	
-  for a := 0; a < channel_length; a++ {
-    result = append(result, <- results)
-    if len(result) % 10 == 0 {
+			}
+		})(link)
+	}
+	close(jobs)
+
+	for a := 0; a < channel_length; a++ {
+		result = append(result, <-results)
+		if len(result)%10 == 0 {
 			writeJson(result, getParserOutput(name))
 			fmt.Println("Saved count: ", len(result))
-    }
-  }
+		}
+	}
 
 	writeJson(result, getParserOutput(name))
-	//.map(a => { a.category=a.category.replace(/([а-яё])([А-ЯЁ])/g, '$1/$2');  return a})
 
 	return nil
 }
 
+//.map(a => { a.category=a.category.replace(/([а-яё])([А-ЯЁ])/g, '$1/$2');  return a})
 //a.map(i => {
 //	i.code=(i.title.match(/\(([^\)]+)\)$/) || {})[1];
 //	i.title=i.title.replace(/\([^\)]+\)$/, '').trim();
 //	return i;
 //})
-
-//a[0].title.match(/\(([^\)]+)\)$/)
-//a[0].title.replace(/\([^\)]+\)$/, '').trim()
-

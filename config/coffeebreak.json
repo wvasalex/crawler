@@ -4,8 +4,8 @@
       "origin": "https://coffee-break.pro",
       "start": "https://coffee-break.pro"
     },
-    "menu": {"selector" : ".dropdown-menu-inner a" },
-    "pagination": {"selector": "#pagination_bottom a:not(.pagination_previous):not(.pagination_next)"},
+    "menu": {"selector" : ".dropdown-menu.level2 a"},
+    "pagination": {"selector": "#pagination_bottom a:not([rel])"},
     "item": {"selector":".products-block .product-name"}
   },
   "parser": {
