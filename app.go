@@ -16,6 +16,11 @@ var (
 func main() {
 	flag.Parse()
 
+	if *app == "test" {
+		GetWithRuntime("http://play.golang.org/?simple=1")
+		return
+	}
+
 	if *config == "" {
 		fmt.Println("Parser name required")
 		return
