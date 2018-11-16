@@ -16,8 +16,10 @@ var (
 func main() {
 	flag.Parse()
 
-	if *app == "test" {
-		GetWithRuntime("http://play.golang.org/?simple=1")
+	if *app == "olegon" {
+		GetWithRuntime("https://barcodes.olegon.ru/index.php?c=8009307013098")
+		//writeFile([]byte(html), "./result/output/8009307013098")
+		
 		return
 	}
 

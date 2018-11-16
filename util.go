@@ -60,6 +60,10 @@ func writeLines(lines []string, path string) error {
 	return w.Flush()
 }
 
+func writeFile(line []byte, path string) error {
+	return ioutil.WriteFile(path, line, 0644)
+}
+
 func writeJson(raw []StringMap, path string) error {
 	data, _ := json.Marshal(raw)
 	var result_json []string

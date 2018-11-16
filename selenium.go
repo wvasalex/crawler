@@ -3,9 +3,10 @@ package main
 import (
 	"fmt"
 	"github.com/tebeka/selenium"
+	"time"
 )
 
-func GetWithRuntime(url string) string {
+func GetWithRuntime(url string) (string) {
 	const (
 		// These paths will be different on your system.
 		seleniumPath    = "../src/github.com/tebeka/selenium/vendor/selenium-server-standalone-3.14.0.jar"
@@ -13,7 +14,7 @@ func GetWithRuntime(url string) string {
 		port            = 8888
 	)
 	opts := []selenium.ServiceOption{
-		selenium.StartFrameBuffer(),           // Start an X frame buffer for the browser to run in.
+		//selenium.StartFrameBuffer(),           // Start an X frame buffer for the browser to run in.
 		selenium.GeckoDriver(geckoDriverPath), // Specify the path to GeckoDriver in order to use Firefox.
 		//selenium.Output(os.Stderr),            // Output debug information to STDERR.
 	}
@@ -37,9 +38,13 @@ func GetWithRuntime(url string) string {
 		panic(err)
 	}
 
-	elem, err := wd.FindElement(selenium.ByCSSSelector, "html")
+	time.Sleep(time.Second*20)
 
-	html, _ := elem.GetAttribute("innerHTML")
-	fmt.Println(elem.Text())
+	v, a := wd.FindElement(selenium.ByCSSSelector, "#names")
+	fmt.Println(a,v)
+
+	//html, err := wd.ExecuteScriptRaw("return document.documentElement.outerHTML", nil)
+	//html, _ := elem.GetAttribute("innerHTML")
+	html, _ := wd.PageSource()
 	return html
 }

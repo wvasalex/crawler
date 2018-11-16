@@ -324,6 +324,14 @@ func parse(config map[string]CrawlerConfig, name string, bootOptions StringMap) 
 		go worker(w, jobs, results)
 	}
 
+	/*getDOM2 := func(link string) *goquery.Document {
+		doc, err := goquery.NewDocumentFromReader(strings.NewReader(GetWithRuntime(link)))
+		if err != nil {
+			doc = nil
+		}
+		return doc
+	}*/
+
 	for _, link := range links {
 		(func(link string) {
 			jobs <- func() StringMap {
@@ -350,13 +358,11 @@ func parse(config map[string]CrawlerConfig, name string, bootOptions StringMap) 
 
 	for a := 0; a < channel_length; a++ {
 		result = append(result, <-results)
-		if len(result)%10 == 0 {
+		if len(result)%10 == 0 || len(result) == channel_length {
 			writeJson(result, getParserOutput(name))
 			fmt.Println("Saved count: ", len(result))
 		}
 	}
-
-	writeJson(result, getParserOutput(name))
 
 	return nil
 }

@@ -1,7 +1,7 @@
 {
   "crawler": {
     "root": {
-      "input": "globus_codes.txt",
+      "input": "product_codes.txt",
       "origin": "https://online.globus.ru",
       "start": "https://online.globus.ru/search/?q="
     },
