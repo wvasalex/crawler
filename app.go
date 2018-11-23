@@ -16,13 +16,6 @@ var (
 func main() {
 	flag.Parse()
 
-	if *app == "olegon" {
-		GetWithRuntime("https://barcodes.olegon.ru/index.php?c=8009307013098")
-		//writeFile([]byte(html), "./result/output/8009307013098")
-		
-		return
-	}
-
 	if *config == "" {
 		fmt.Println("Parser name required")
 		return
