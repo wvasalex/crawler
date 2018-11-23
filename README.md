@@ -1,5 +1,5 @@
 Утилита состоит из 2х частей - краулера и парсера. 
-Краулер собирает ссылки на конечные страницы с информацией, затем парсер их разбирает.
+Краулер собирает ссылки на конечные страницы с информацией, затем парсер собирает требуемые данные.
 
 # crawler
 
@@ -14,3 +14,39 @@
 Настройки для парсера (селектор элементов с данными и способ их сбора) находятся в папке config в формате json. 
 Парсер разбирает информацию с конечных страниц, сохраняя результаты в формате json. Ссылки для парсинга берутся из файла, который
 сгенерировал краулер.
+
+Запуск
+go run *.go -app=crawler -config=CONFIG_NAME -poolsize=POOLSIZE -sleeptime=SLEEPTIME -debug=DEBUG
+go run *.go -app=parser -config=CONFIG_NAME -poolsize=POOLSIZE -sleeptime=SLEEPTIME -debug=DEBUG
+
+CONFIG_NAME - название файла без расширения в папке /config. Например, при указании -config=globus конфиг должен располагаться по
+пути ./config/globus.json
+POOLSIZE - количество потоков для выполнения запросов, целое число. Подавляющее большинство сайтов при POOLSIZE > 10 падает после 1k запросов, либо перестают отдавать интересующий контент. В много потоков (пробовал 100) удалось скачивать только Ашан - он не повис и не заблокировал контент.
+SLEEPTIME - время ожидания перед выполнением запроса, целое число. Важно для сайтов, не выдерживающих больших нагрузок (barista, coffeebreak). Если указать 0, запросы будут отправляться без задержек.
+DEBUG - включить режим отладки, булево значение. Если указан, кол-во запросов будет ограничено 10 (нужно при написании нового конфига).
+
+## Пример
+{
+  "crawler": { // Настройки краулера
+    "root": {
+      "input": "product_codes.txt", // файл с входными данными (список шк)
+      "origin": "https://online.globus.ru", // хост
+      "start": "https://online.globus.ru/search/?q=" // префикс для конкатенации со строками из input файла
+    },
+    "item": {"selector": ".catalog-section__item__link"} // селектор ссылок на конечные страницы
+  },
+  "parser": { // Настройки парсера
+    "title": {"selector": ".item-card--detail h1", "prop": "Text"},
+    "category": {"selector": ".nav_breadcrumbs a", "filter": "2:0", "prop": "Text", "concatWith": "/"},
+    "price": {"selector": ".item-card--detail .item-price__num meta[itemprop=\"price\"]", "filter": "Last", "prop": "Attr", "Attr": "content"},
+    "description": {
+      "selector": ".item-card__descr table",
+      "header": "td:first-of-type",
+      "value": "td+td", 
+      "prop": "Table",
+      "&brand": "Бренд",
+      "&manufacturer": "Производитель",
+      "&article": "Номер артикула"
+    }
+  }
+}
